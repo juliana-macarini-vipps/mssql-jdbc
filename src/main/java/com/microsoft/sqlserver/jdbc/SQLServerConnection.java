@@ -7,12 +7,15 @@ package com.microsoft.sqlserver.jdbc;
 
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.net.URL;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -1579,6 +1582,15 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
 
             sPropKey = SQLServerDriverStringProperty.ACCESS_TOKEN.toString();
             sPropValue = activeConnectionProperties.getProperty(sPropKey);
+            if (sPropValue != null && sPropValue.startsWith("file://")) {
+                Properties fileProperties = new Properties();
+                try {
+                    fileProperties.load(new InputStreamReader(new URL(sPropValue).openStream()));
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to read connection properties from " + sPropValue, e);
+                }
+                sPropValue = fileProperties.getProperty("accessToken");
+            }
             if (null != sPropValue) {
                 accessTokenInByte = sPropValue.getBytes(UTF_16LE);
             }
